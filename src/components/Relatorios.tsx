@@ -62,22 +62,22 @@ export function Relatorios({ students, classifications, observations, forwarding
   };
 
   const exportData = (type: 'csv' | 'excel') => {
-    const headers = ['RA', 'Nome', 'Série', 'Turma', 'Turno', 'Modalidade', 'PAED', 'Status', 'Observações', 'Encaminhamentos'];
+    const headers = ['RA', 'Nome', 'Turma', 'Situações Pedagógicas (Características)', 'Observações', 'Encaminhamentos'];
     
     const rows = sortedStudents.map(student => {
-      const status = getStatus(student.id);
+      const studentClassifications = classifications
+        .filter(c => c.studentId === student.id)
+        .map(c => CLASS_TYPES.find(t => t.id === c.classId)?.label || c.classId)
+        .join(', ');
+
       const obs = observations.filter(o => o.studentId === student.id).map(o => o.texto).join('; ');
       const enc = forwardings.filter(f => f.studentId === student.id).map(f => f.texto).join('; ');
       
       return [
         student.cod,
         student.nome,
-        student.serie || '',
         student.turma,
-        student.turno || '',
-        student.modalidade || '',
-        student.paed ? 'Sim' : 'Não',
-        status,
+        `"${studentClassifications.replace(/"/g, '""')}"`,
         `"${obs.replace(/"/g, '""')}"`,
         `"${enc.replace(/"/g, '""')}"`
       ].join(type === 'csv' ? ',' : '\t');
@@ -110,22 +110,23 @@ export function Relatorios({ students, classifications, observations, forwarding
     doc.text('EE PROF. FERNANDO LEITE DE CAMPOS', 14, 30);
     doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, 36);
 
-    const headers = [['Nome', 'Série', 'Turma', 'Turno', 'PAED', 'Status', 'Observações', 'Encaminhamentos']];
+    const headers = [['Nome do Aluno', 'Turma', 'Situações Pedagógicas', 'Observações', 'Encaminhamentos']];
     
     const data = sortedStudents.map(student => {
-      const status = getStatus(student.id);
-      const obs = observations.filter(o => o.studentId === student.id).map(o => o.texto).join('\n- ');
-      const enc = forwardings.filter(f => f.studentId === student.id).map(f => f.texto).join('\n- ');
+      const studentClassifications = classifications
+        .filter(c => c.studentId === student.id)
+        .map(c => CLASS_TYPES.find(t => t.id === c.classId)?.label || c.classId)
+        .join('\n• ');
+
+      const obs = observations.filter(o => o.studentId === student.id).map(o => o.texto).join('\n• ');
+      const enc = forwardings.filter(f => f.studentId === student.id).map(f => f.texto).join('\n• ');
       
       return [
         student.nome,
-        student.serie || '-',
         student.turma,
-        student.turno || '-',
-        student.paed ? 'Sim' : 'Não',
-        status,
-        obs ? `- ${obs}` : 'Nenhuma',
-        enc ? `- ${enc}` : 'Nenhum'
+        studentClassifications ? `• ${studentClassifications}` : 'Nenhuma',
+        obs ? `• ${obs}` : 'Nenhuma',
+        enc ? `• ${enc}` : 'Nenhum'
       ];
     });
 
@@ -134,18 +135,15 @@ export function Relatorios({ students, classifications, observations, forwarding
       head: headers,
       body: data,
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
+      styles: { fontSize: 8, cellPadding: 2.5 },
       headStyles: { fillColor: [17, 50, 100], textColor: [255, 255, 255], fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       columnStyles: {
-        0: { cellWidth: 40 }, // Nome
-        1: { cellWidth: 15 }, // Série
-        2: { cellWidth: 25 }, // Turma
-        3: { cellWidth: 15 }, // Turno
-        4: { cellWidth: 12 }, // PAED
-        5: { cellWidth: 25 }, // Status
-        6: { cellWidth: 65 }, // Observações
-        7: { cellWidth: 65 }  // Encaminhamentos
+        0: { cellWidth: 55, fontStyle: 'bold' }, // Nome
+        1: { cellWidth: 35 },                    // Turma
+        2: { cellWidth: 65 },                    // Situações Pedagógicas
+        3: { cellWidth: 55 },                    // Observações
+        4: { cellWidth: 55 }                     // Encaminhamentos
       }
     });
 
@@ -165,11 +163,9 @@ export function Relatorios({ students, classifications, observations, forwarding
     doc.text('EE PROF. FERNANDO LEITE DE CAMPOS', 14, 30);
     doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, 36);
 
-    const headers = [['Aluno / Turma', 'Perfil (Classificações)', 'Observações', 'Encaminhamentos']];
+    const headers = [['Aluno / Turma', 'Situações Pedagógicas', 'Observações', 'Encaminhamentos']];
     
     const data = sortedStudents.map(student => {
-      const status = getStatus(student.id);
-      
       const studentClassifications = classifications
         .filter(c => c.studentId === student.id)
         .map(c => CLASS_TYPES.find(t => t.id === c.classId)?.label || c.classId)
@@ -179,7 +175,7 @@ export function Relatorios({ students, classifications, observations, forwarding
       const enc = forwardings.filter(f => f.studentId === student.id).map(f => f.texto).join('\n• ');
       
       return [
-        `${student.nome}\nSérie: ${student.serie || '-'}\nTurma: ${student.turma}\nStatus: ${status}`,
+        `${student.nome}\nTurma: ${student.turma}`,
         studentClassifications ? `• ${studentClassifications}` : 'Nenhuma',
         obs ? `• ${obs}` : 'Nenhuma',
         enc ? `• ${enc}` : 'Nenhum'
@@ -195,10 +191,10 @@ export function Relatorios({ students, classifications, observations, forwarding
       headStyles: { fillColor: [17, 50, 100], textColor: [255, 255, 255], fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [250, 250, 250] },
       columnStyles: {
-        0: { cellWidth: 45, fontStyle: 'bold' }, // Aluno / Turma
-        1: { cellWidth: 45 }, // Perfil
-        2: { cellWidth: 45 }, // Observações
-        3: { cellWidth: 45 }  // Encaminhamentos
+        0: { cellWidth: 50, fontStyle: 'bold' }, // Aluno / Turma
+        1: { cellWidth: 50 }, // Situações Pedagógicas
+        2: { cellWidth: 40 }, // Observações
+        3: { cellWidth: 40 }  // Encaminhamentos
       }
     });
 
@@ -377,60 +373,65 @@ export function Relatorios({ students, classifications, observations, forwarding
               <thead className="bg-slate-50 print:bg-white border-b border-slate-200 text-slate-600 font-semibold">
                 <tr>
                   <th className="px-4 py-3 print:px-1">Nome do Aluno</th>
-                  <th className="px-4 py-3 print:px-1">Série</th>
                   <th className="px-4 py-3 print:px-1">Turma</th>
-                  <th className="px-4 py-3 print:px-1">Turno</th>
-                  <th className="px-4 py-3 print:px-1">PAED</th>
-                  <th className="px-4 py-3 print:px-1">Status</th>
+                  <th className="px-4 py-3 print:px-1">Situações Pedagógicas</th>
                   <th className="px-4 py-3 print:px-1">Observações</th>
                   <th className="px-4 py-3 print:px-1">Encaminhamentos</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {sortedStudents.map(student => {
-                  const status = getStatus(student.id);
+                  const studentClassifications = classifications
+                    .filter(c => c.studentId === student.id)
+                    .map(c => CLASS_TYPES.find(t => t.id === c.classId) || { id: c.classId, label: c.classId, emoji: '🏷️', color: '#6366f1' });
+
                   const obsList = observations.filter(o => o.studentId === student.id);
                   const encList = forwardings.filter(f => f.studentId === student.id);
-                  
-                  let statusColor = "text-slate-600";
-                  if (status === 'Reprovado') statusColor = "text-rose-600 font-medium";
-                  if (status === 'Aprovado pelo Conselho') statusColor = "text-amber-600 font-medium";
-                  if (status === 'Aprovado') statusColor = "text-emerald-600 font-medium";
 
                   return (
                     <tr key={student.id} className="hover:bg-slate-50 print:hover:bg-white break-inside-avoid">
-                      <td className="px-4 py-3 print:px-1 align-top font-medium text-slate-800">{student.nome}</td>
-                      <td className="px-4 py-3 print:px-1 align-top text-slate-500">{student.serie || '-'}</td>
-                      <td className="px-4 py-3 print:px-1 align-top text-slate-500">{student.turma}</td>
-                      <td className="px-4 py-3 print:px-1 align-top text-slate-500">{student.turno || '-'}</td>
-                      <td className="px-4 py-3 print:px-1 align-top text-slate-500">
-                        {student.paed ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                            Sim
-                          </span>
-                        ) : 'Não'}
+                      <td className="px-4 py-3 print:px-1 align-top font-medium text-slate-800">
+                        {student.nome}
+                        {student.cod && <span className="block text-xs text-slate-400 font-normal">RA: {student.cod}</span>}
                       </td>
-                      <td className={`px-4 py-3 print:px-1 align-top ${statusColor}`}>{status}</td>
+                      <td className="px-4 py-3 print:px-1 align-top text-slate-600 font-medium">{student.turma}</td>
+                      <td className="px-4 py-3 print:px-1 align-top">
+                        {studentClassifications.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5 max-w-[320px]">
+                            {studentClassifications.map(c => (
+                              <span 
+                                key={c.id} 
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200"
+                              >
+                                <span>{c.emoji}</span>
+                                <span>{c.label}</span>
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-xs">Nenhuma característica</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 print:px-1 align-top">
                         {obsList.length > 0 ? (
-                          <ul className="list-disc pl-4 space-y-1 text-slate-600">
+                          <ul className="list-disc pl-4 space-y-1 text-slate-600 text-xs">
                             {obsList.map(o => <li key={o.id}>{o.texto}</li>)}
                           </ul>
-                        ) : <span className="text-slate-400 italic">Nenhuma</span>}
+                        ) : <span className="text-slate-400 italic text-xs">Nenhuma</span>}
                       </td>
                       <td className="px-4 py-3 print:px-1 align-top">
                         {encList.length > 0 ? (
-                          <ul className="list-disc pl-4 space-y-1 text-slate-600">
+                          <ul className="list-disc pl-4 space-y-1 text-slate-600 text-xs">
                             {encList.map(f => <li key={f.id}>{f.texto}</li>)}
                           </ul>
-                        ) : <span className="text-slate-400 italic">Nenhum</span>}
+                        ) : <span className="text-slate-400 italic text-xs">Nenhum</span>}
                       </td>
                     </tr>
                   );
                 })}
                 {sortedStudents.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
                       Nenhum registro encontrado para os filtros selecionados.
                     </td>
                   </tr>

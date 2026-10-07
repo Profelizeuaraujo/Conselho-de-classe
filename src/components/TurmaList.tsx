@@ -13,10 +13,12 @@ interface TurmaListProps {
   onToggleClass: (studentId: number, classId: string) => void;
   onAddObs: (studentId: number) => void;
   onAddEnc: (studentId: number) => void;
+  onDeleteObs?: (obsId: number) => void;
+  onDeleteEnc?: (encId: number) => void;
   onDeleteStudent: (studentId: number) => void;
 }
 
-export function TurmaList({ modalidade, students, turmas, classifications, observations, forwardings, initialFilter, onToggleClass, onAddObs, onAddEnc, onDeleteStudent }: TurmaListProps) {
+export function TurmaList({ modalidade, students, turmas, classifications, observations, forwardings, initialFilter, onToggleClass, onAddObs, onAddEnc, onDeleteObs, onDeleteEnc, onDeleteStudent }: TurmaListProps) {
   const [busca, setBusca] = useState('');
   const [turma, setTurma] = useState('');
   const [serie, setSerie] = useState('');
@@ -206,6 +208,8 @@ export function TurmaList({ modalidade, students, turmas, classifications, obser
           classifications={classifications}
           observations={observations}
           forwardings={forwardings}
+          onDeleteObs={onDeleteObs}
+          onDeleteEnc={onDeleteEnc}
           onClose={() => setSelectedProfile(null)}
         />
       )}

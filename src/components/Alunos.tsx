@@ -73,6 +73,30 @@ export function Alunos({ students, turmas, classifications, observations, forwar
     }
   };
 
+  const handleDeleteObs = async (obsId: number) => {
+    try {
+      await fetch(`/api/observacoes/${obsId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      onDataChanged();
+    } catch (err) {
+      alert("Erro ao excluir observação");
+    }
+  };
+
+  const handleDeleteEnc = async (encId: number) => {
+    try {
+      await fetch(`/api/encaminhamentos/${encId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      onDataChanged();
+    } catch (err) {
+      alert("Erro ao excluir encaminhamento");
+    }
+  };
+
   const handleImport = async () => {
     try {
       const data = JSON.parse(importText);
@@ -267,6 +291,8 @@ export function Alunos({ students, turmas, classifications, observations, forwar
           classifications={classifications}
           observations={observations}
           forwardings={forwardings}
+          onDeleteObs={handleDeleteObs}
+          onDeleteEnc={handleDeleteEnc}
           onClose={() => setSelectedProfile(null)}
         />
       )}

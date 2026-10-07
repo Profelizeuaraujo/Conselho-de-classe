@@ -1,6 +1,6 @@
 import React from 'react';
 import { Student, Classification, Observation, Forwarding, CLASS_TYPES } from '../types';
-import { X, Printer, User, AlertCircle, BookOpen, GraduationCap, CheckCircle } from 'lucide-react';
+import { X, Printer, User, AlertCircle, BookOpen, GraduationCap, CheckCircle, Trash2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -10,9 +10,11 @@ interface StudentProfileModalProps {
   observations: Observation[];
   forwardings: Forwarding[];
   onClose: () => void;
+  onDeleteObs?: (obsId: number) => void;
+  onDeleteEnc?: (encId: number) => void;
 }
 
-export function StudentProfileModal({ student, classifications, observations, forwardings, onClose }: StudentProfileModalProps) {
+export function StudentProfileModal({ student, classifications, observations, forwardings, onClose, onDeleteObs, onDeleteEnc }: StudentProfileModalProps) {
   const studentClasses = classifications.filter(c => c.studentId === student.id);
   const studentObs = observations.filter(o => o.studentId === student.id);
   const studentEnc = forwardings.filter(f => f.studentId === student.id);
@@ -202,14 +204,29 @@ export function StudentProfileModal({ student, classifications, observations, fo
           {/* Observações e Encaminhamentos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:block print:space-y-8">
             <section>
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <BookOpen className="w-4 h-4" /> Observações
-              </h3>
+              <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" /> Observações ({studentObs.length})
+                </h3>
+              </div>
               {studentObs.length > 0 ? (
                 <ul className="space-y-3">
                   {studentObs.map(obs => (
-                    <li key={obs.id} className="bg-amber-50/50 p-3 rounded-lg border border-amber-100 text-sm text-slate-800 print:border-slate-300 print:bg-transparent">
-                      {obs.texto}
+                    <li key={obs.id} className="group bg-amber-50/50 p-3 rounded-lg border border-amber-100 text-sm text-slate-800 print:border-slate-300 print:bg-transparent flex justify-between items-start gap-3">
+                      <div className="flex-1 whitespace-pre-wrap">{obs.texto}</div>
+                      {onDeleteObs && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Deseja excluir esta observação?')) {
+                              onDeleteObs(obs.id);
+                            }
+                          }}
+                          className="text-slate-400 hover:text-red-600 p-1 rounded hover:bg-white transition print:hidden shrink-0"
+                          title="Apagar observação"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -219,14 +236,29 @@ export function StudentProfileModal({ student, classifications, observations, fo
             </section>
 
             <section>
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" /> Encaminhamentos
-              </h3>
+              <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" /> Encaminhamentos ({studentEnc.length})
+                </h3>
+              </div>
               {studentEnc.length > 0 ? (
                 <ul className="space-y-3">
                   {studentEnc.map(enc => (
-                    <li key={enc.id} className="bg-rose-50/50 p-3 rounded-lg border border-rose-100 text-sm text-slate-800 print:border-slate-300 print:bg-transparent">
-                      {enc.texto}
+                    <li key={enc.id} className="group bg-rose-50/50 p-3 rounded-lg border border-rose-100 text-sm text-slate-800 print:border-slate-300 print:bg-transparent flex justify-between items-start gap-3">
+                      <div className="flex-1 whitespace-pre-wrap">{enc.texto}</div>
+                      {onDeleteEnc && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Deseja excluir este encaminhamento?')) {
+                              onDeleteEnc(enc.id);
+                            }
+                          }}
+                          className="text-slate-400 hover:text-red-600 p-1 rounded hover:bg-white transition print:hidden shrink-0"
+                          title="Apagar encaminhamento"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
